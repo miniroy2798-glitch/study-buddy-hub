@@ -1,0 +1,8 @@
+{
+  "name": "Study Buddy Hub",
+  "description": "A task manager for students to track homework, exams, projects, and study schedules.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
