@@ -25,6 +25,7 @@ export default function App() {
   });
 
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [activeTab, setActiveTab] = useState<'home' | 'calendar' | 'completed' | 'progress'>('home');
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
   const [showReward, setShowReward] = useState<{points: number, badge?: Badge} | null>(null);
@@ -37,24 +38,39 @@ export default function App() {
     localStorage.setItem('study-buddy-stats', JSON.stringify(userState));
   }, [userState]);
 
-  const addTask = (newTaskData: Omit<Task, 'id' | 'createdAt' | 'completed'>) => {
-    const newTask: Task = {
-      ...newTaskData,
-      id: crypto.randomUUID(),
-      completed: false,
-      createdAt: new Date().toISOString(),
-    };
-    setTasks(prev => [newTask, ...prev]);
-    setIsFormOpen(false);
-
-    if (tasks.length === 0 && !userState.badges.find(b => b.iconType === 'first-step')) {
-      awardBadge({
+  const saveTask = (taskData: Omit<Task, 'id' | 'createdAt' | 'completed'>) => {
+    if (editingTask) {
+      setTasks(prev => prev.map(t => 
+        t.id === editingTask.id ? { ...t, ...taskData } : t
+      ));
+      setEditingTask(null);
+    } else {
+      const newTask: Task = {
+        ...taskData,
         id: crypto.randomUUID(),
-        name: 'First Step',
-        description: 'Added your first study task!',
-        iconType: 'first-step',
-        earnedAt: new Date().toISOString()
-      }, 5);
+        completed: false,
+        createdAt: new Date().toISOString(),
+      };
+      setTasks(prev => [newTask, ...prev]);
+
+      if (tasks.length === 0 && !userState.badges.find(b => b.iconType === 'first-step')) {
+        awardBadge({
+          id: crypto.randomUUID(),
+          name: 'First Step',
+          description: 'Added your first study task!',
+          iconType: 'first-step',
+          earnedAt: new Date().toISOString()
+        }, 5);
+      }
+    }
+    setIsFormOpen(false);
+  };
+
+  const editTask = (id: string) => {
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+      setEditingTask(task);
+      setIsFormOpen(true);
     }
   };
 
@@ -205,7 +221,7 @@ export default function App() {
                     </div>
                     <div className="space-y-3">
                       {overdueTasks.map(t => (
-                        <TaskCard key={t.id} task={t} onToggle={toggleTask} onDelete={deleteTask} />
+                        <TaskCard key={t.id} task={t} onToggle={toggleTask} onEdit={editTask} onDelete={deleteTask} />
                       ))}
                     </div>
                  </section>
@@ -224,7 +240,7 @@ export default function App() {
                 ) : (
                   <div className="space-y-3">
                     {todayTasks.map(t => (
-                      <TaskCard key={t.id} task={t} onToggle={toggleTask} onDelete={deleteTask} />
+                      <TaskCard key={t.id} task={t} onToggle={toggleTask} onEdit={editTask} onDelete={deleteTask} />
                     ))}
                   </div>
                 )}
@@ -242,7 +258,7 @@ export default function App() {
                 ) : (
                   <div className="space-y-3">
                     {upcomingTasks.sort((a,b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()).map(t => (
-                      <TaskCard key={t.id} task={t} onToggle={toggleTask} onDelete={deleteTask} />
+                      <TaskCard key={t.id} task={t} onToggle={toggleTask} onEdit={editTask} onDelete={deleteTask} />
                     ))}
                   </div>
                 )}
@@ -348,7 +364,7 @@ export default function App() {
               ) : (
                 <div className="space-y-3 opacity-80">
                   {completedTasks.map(t => (
-                    <TaskCard key={t.id} task={t} onToggle={toggleTask} onDelete={deleteTask} />
+                    <TaskCard key={t.id} task={t} onToggle={toggleTask} onEdit={editTask} onDelete={deleteTask} />
                   ))}
                 </div>
               )}
@@ -439,7 +455,10 @@ export default function App() {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => setIsFormOpen(true)}
+          onClick={() => {
+            setEditingTask(null);
+            setIsFormOpen(true);
+          }}
           className="flex items-center gap-3 rounded-full bg-[#1a1a1a] p-2 pr-4 text-white shadow-xl hover:bg-black transition-colors border border-gray-800"
           aria-label="Add new task"
         >
@@ -476,8 +495,12 @@ export default function App() {
       <AnimatePresence>
         {isFormOpen && (
           <TaskForm 
-            onAdd={addTask} 
-            onClose={() => setIsFormOpen(false)} 
+            initialTask={editingTask || undefined}
+            onSave={saveTask} 
+            onClose={() => {
+              setIsFormOpen(false);
+              setEditingTask(null);
+            }} 
           />
         )}
       </AnimatePresence>

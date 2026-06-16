@@ -6,23 +6,31 @@ import { cn } from '../lib/utils';
 import { format, startOfToday } from 'date-fns';
 
 interface TaskFormProps {
-  onAdd: (task: Omit<Task, 'id' | 'createdAt' | 'completed'>) => void;
+  initialTask?: Task;
+  onSave: (task: Omit<Task, 'id' | 'createdAt' | 'completed'>) => void;
   onClose: () => void;
 }
 
-export function TaskForm({ onAdd, onClose }: TaskFormProps) {
-  const [title, setTitle] = useState('');
-  const [type, setType] = useState<TaskType>('homework');
-  const [subject, setSubject] = useState('');
-  const [customSubject, setCustomSubject] = useState('');
-  const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [notes, setNotes] = useState('');
+export function TaskForm({ initialTask, onSave, onClose }: TaskFormProps) {
+  const [title, setTitle] = useState(initialTask?.title || '');
+  const [type, setType] = useState<TaskType>(initialTask?.type || 'homework');
+  const [subject, setSubject] = useState(() => {
+    if (!initialTask?.subject) return '';
+    if (SUBJECTS.includes(initialTask.subject as any)) return initialTask.subject;
+    return 'Other';
+  });
+  const [customSubject, setCustomSubject] = useState(() => {
+    if (initialTask?.subject && !SUBJECTS.includes(initialTask.subject as any)) return initialTask.subject;
+    return '';
+  });
+  const [description, setDescription] = useState(initialTask?.description || '');
+  const [dueDate, setDueDate] = useState(initialTask?.dueDate || format(new Date(), 'yyyy-MM-dd'));
+  const [notes, setNotes] = useState(initialTask?.notes || '');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onAdd({
+    onSave({
       title: title.trim(),
       type,
       subject: subject === 'Other' ? customSubject.trim() || undefined : subject || undefined,
@@ -56,7 +64,7 @@ export function TaskForm({ onAdd, onClose }: TaskFormProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-gray-100 p-5 px-6">
-          <h2 className="text-[17px] font-semibold text-gray-900 tracking-tight">New Task</h2>
+          <h2 className="text-[17px] font-semibold text-gray-900 tracking-tight">{initialTask ? 'Edit Task' : 'New Task'}</h2>
           <button
             onClick={onClose}
             className="rounded-full p-1.5 text-gray-400 hover:bg-gray-50 hover:text-gray-900 transition-colors"

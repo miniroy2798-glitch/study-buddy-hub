@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { BookOpen, Calendar, Clock, GraduationCap, Presentation, CheckCircle2, Circle } from 'lucide-react';
+import { BookOpen, Calendar, Clock, GraduationCap, Presentation, CheckCircle2, Circle, Pencil } from 'lucide-react';
 import { Task, TaskType } from '../types';
 import { cn } from '../lib/utils';
 import { format, isToday, isTomorrow, isPast, parseISO, startOfDay } from 'date-fns';
@@ -9,10 +9,11 @@ interface TaskCardProps {
   key?: React.Key;
   task: Task;
   onToggle: (id: string) => void;
+  onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
-export function TaskCard({ task, onToggle, onDelete }: TaskCardProps) {
+export function TaskCard({ task, onToggle, onEdit, onDelete }: TaskCardProps) {
   const isCompleted = task.completed;
   
   const getTypeConfig = (type: TaskType) => {
@@ -104,14 +105,24 @@ export function TaskCard({ task, onToggle, onDelete }: TaskCardProps) {
         </div>
       </div>
 
-      <button
-        onClick={() => onDelete(task.id)}
-        className="opacity-0 group-hover:opacity-100 transition-opacity p-2 -mr-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl"
-        aria-label="Delete task"
-      >
-        <span className="sr-only">Delete</span>
-        <XIcon size={16} />
-      </button>
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center -mr-2">
+        <button
+          onClick={() => onEdit(task.id)}
+          className="p-2 text-gray-300 hover:text-blue-500 hover:bg-blue-50 rounded-xl"
+          aria-label="Edit task"
+        >
+          <span className="sr-only">Edit</span>
+          <Pencil size={15} />
+        </button>
+        <button
+          onClick={() => onDelete(task.id)}
+          className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl"
+          aria-label="Delete task"
+        >
+          <span className="sr-only">Delete</span>
+          <XIcon size={16} />
+        </button>
+      </div>
     </motion.div>
   );
 }
